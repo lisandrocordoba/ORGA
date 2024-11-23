@@ -85,8 +85,19 @@ int main (void){
   listAddLast(list,&p10);
   
   // Acá pueden probar su código
+  uint64_t aprobados_bob = contar_pagos_aprobados_asm(list, "bob"); // tiene q dar 2
+  printf("Aprobados de Bob: %li\n", aprobados_bob);
 
+  uint64_t aprobados_nicolas = contar_pagos_aprobados_asm(list, "nicolas"); // tiene q dar 1
+  printf("Aprobados de Nicolas: %li\n", aprobados_nicolas);
 
+  uint64_t aprobados_susan = contar_pagos_aprobados_asm(list, "susan"); // tiene q dar 1
+  printf("Aprobados de Susan: %li\n", aprobados_susan);
+
+  uint64_t aprobados_lisandro = contar_pagos_aprobados_asm(list, "lisandro"); // tiene q dar 0
+  printf("Aprobados de Lisandro: %li\n", aprobados_lisandro);
+
+  listDelete(list);
 	return 0;    
 }
 

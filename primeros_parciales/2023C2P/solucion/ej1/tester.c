@@ -12,13 +12,13 @@
 
 char *filename_ej1 =  "salida.propios.ej1.txt";
 void test_ej1a(char* filename);
-void test_ej1b(char* filename);
+//void test_ej1b(char* filename);
 
 int main() {
 	srand(0);
     remove(filename_ej1);
     test_ej1a(filename_ej1);
-	test_ej1b(filename_ej1);
+	//test_ej1b(filename_ej1);
 	return 0;
 }
 
@@ -73,9 +73,9 @@ void test_ej1a(char* filename) {
 
     }
 }
-
+ /*
 void test_ej1b(char* filename) {
-    
+   
     pagoSplitted_t* (*func_split)(list_t*, char*);
     if (USE_ASM_IMPL){
         func_split = split_pagos_usuario_asm;
@@ -117,4 +117,4 @@ void test_ej1b(char* filename) {
 
     }
 }
-
+*/

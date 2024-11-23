@@ -1,0 +1,177 @@
+/** Lista **/
+typedef struct string_proc_list_t {
+    struct string_proc_node_t* first;
+    struct string_proc_node_t* last;
+} string_proc_list;
+
+
+/** Nodo **/
+typedef struct string_proc_node_t {
+    struct string_proc_node_t* next;
+    struct string_proc_node_t* previous;
+    uint8_t type;
+    char* hash;
+} string_proc_node;
+
+"A- Implementar string_proc_list* string_proc_list_create_asm()"
+
+-----------------------------EN C-----------------------------------
+    string_proc_list* string_proc_list_create_asm(){
+        string_proc_list* list = malloc(sizeof(string_proc_list_));
+        list->first = NULL;
+        list->last = NULL;
+        return list;
+    }
+-------------------------------------------------------------------
+
+
+---------------------------EN ASM----------------------------------
+
+SIZE_STRUCT_LIST db 0x16
+OFFSET_LIST_FIRST db 0x0
+OFFSET_LIST_LAST db 0x8
+
+
+.string_proc_list:
+    prologo:
+        push rbp                       ; "Pila alineada a 16"
+        mov rbp, rsp
+
+    mov rdi, [SIZE_STRUCT_LIST]             ; "Parametro para el malloc"
+    call malloc                             ; "Deja en rax el puntero a la memoria reservada para la lista"
+    mov qword [RAX + OFFSET_LIST_FIRST], 0x0      ; "Pone NULL en el campo first"
+    mov qword [RAX + OFFSET_LIST_LAST], 0x0       ; "Pone NULL en el campo last"
+
+    epilogo:
+        pop rbp
+        ret
+-------------------------------------------------------------------
+
+
+"B. Implementar
+string_proc_node* string_proc_node_create_asm(uint8_t type, char* hash)
+El nodo tiene que apuntar al hash pasado por parametro."
+
+-----------------------------EN C-----------------------------------
+string_proc_node* string_proc_node_create_asm(uint8_t type, char* hash){
+        string_proc_node* node = malloc(sizeof(string_proc_node));
+        node->next = NULL;
+        node->previous = NULL;
+        node->type = type;
+        node->hash = hash;
+        return node;
+    }
+-------------------------------------------------------------------
+
+---------------------------EN ASM----------------------------------
+
+SIZE_STRUCT_NODE db 0x32
+OFFSET_NODE_NEXT db 0x0
+OFFSET_NODE_PREVIOUS db 0x8
+OFFSET_NODE_TYPE db 0x 16
+OFFSET_NODE_HASH db 24
+
+
+PARAMETROS: 
+ rdi -> uint8_t type
+ rsi -> char* hash
+
+.string_proc_node:
+    prologo:
+        push rbp                       ; Pila alineada a 16
+        mov rbp, rsp
+
+        push rdi                       ; Preservo el type
+        push rsi                       ; Preservo el hash
+
+    ; La pila sigue alineada a 16
+    mov rdi, [SIZE_STRUCT_NODE]                   ; "Parametro para el malloc"
+    call malloc                                   ; "Deja en rax el puntero a la memoria reservada para la lista"
+    mov qword [rax + OFFSET_NODE_NEXT], 0x0       ; "Pone NULL en el campo next"
+    mov qword [rax + OFFSET_NODE_PREVIOUS], 0x0   ; "Pone NULL en el campo previous"
+    
+    pop rsi
+    mov [rax + OFFSET_NODE_HASH], rsi       ; "Setea el campo type"
+
+    pop rdi
+    mov [rax + OFFSET_NODE_TYPE], dil       ; "Setea el campo hash"
+
+    epilogo:
+        pop rbp
+        ret
+-------------------------------------------------------------------
+
+"C. Dada una lista, un tipo y un hash, agrega un nodo nuevo al final de la lista con el tipo y el
+hash dado. Al igual que en el anterior, no hay que copiar el hash.
+
+void string_proc_list_add_node_asm(string_proc_list* list, uint8_t type, char* hash)
+"
+
+-----------------------------EN C-----------------------------------
+void string_proc_list_add_node_asm(string_proc_list* list, uint8_t type, char* hash) {
+    ; Inicializo el nodo
+    string_proc_node* new_node = string_proc_node_create_asm(type, hash);
+    string_proc_node* actual_node = list->last
+    list->last = new_node         ; new_node va a ser el ultimo de la lista
+
+    ; Si la lista era vacia el new_node tmb va a ser el first
+    if(actual_node == NULL){
+        list->first = new_node
+        }
+    ; Si no era vacia, el anterior last va a estar antes que el new_node
+    } else {
+        actual_node->next = new_node
+        new_node->previous = actual_node
+    }
+-------------------------------------------------------------------
+
+---------------------------EN ASM----------------------------------
+
+OFFSET_LIST_FIRST db 0x0
+OFFSET_LIST_LAST db 0x8
+
+
+PARAMETROS: 
+ rdi -> string_proc_list* list
+ rsi -> uint8_t type 
+ rdx -> char* hash
+
+.string_proc_node:
+    prologo:
+        push rbp                       ; Pila alineada a 16
+        mov rbp, rsp
+
+        push rdi    ; Preservo la lista                     
+        push rsi    ; Preservo el type                   
+        push rdx    ; Preservo el hash
+        sub rsp, 8  ; Pila alineada
+
+    mov rdi, rsi                               ; Paso como parametro el type
+    mov rsi, rdx                               ; Paso como parametro el hash
+    call string_proc_node_create_asm           ; rax = new_node
+
+    mov r8, [rbp+32]                    ; r8 = list
+    mov r9, [r8 + OFFSET_LIST_LAST]     ; r9 = actual_node (el last original)
+    mov [r8 + OFFSET_LIST_LAST], rax    ; list->last = new_node
+    
+    cmp r9, 0x0
+    je list_is_empty
+    
+    ; Si la lista no era vacia
+    mov [r9 + OFFSET_NODE_NEXT], rax        ; actual_node->next = new_node
+    mov [rax + OFFSET_NODE_PREVIOUS], r9    ; new_node->previous = actual_node
+    jmp epilogo
+
+    ; Si la lista era vacia
+    .list_is_empty:
+    mov [r8 + OFFSET_LIST_FIRST], rax       ; list->first = new_node
+
+    epilogo:
+        add rsp, 8
+        push rdx
+        push rsi
+        push rdi
+
+        pop rbp
+        ret
+-------------------------------------------------------------------
